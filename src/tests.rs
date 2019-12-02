@@ -1,4 +1,4 @@
-use hex_literal::hex;
+use runtime_io::hashing::sha2_256;
 use support::{assert_err, assert_ok};
 
 use crate::mock::{new_test_ext, Htlc, Origin, Test, Timestamp};
@@ -25,16 +25,83 @@ fn create_token_should_work() {
 }
 
 #[test]
-fn htlc_claim_should_work() {
-	let id = 0;
-	let amount = 1000;
-	let secret_hash = hex!("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+fn create_htlc_should_work() {
 	let now = 1000;
-	let expiration = now + 1000;
+	let invalid_expiration = now;
+	let expiration = now + 1;
+	let amount = 1000;
+	let secret_hash = sha2_256(&[]);
 
 	new_test_ext().execute_with(|| {
 		Timestamp::set_timestamp(now);
 
+		assert_ok!(Htlc::create_token(Origin::signed(ALICE), SYMBOL.to_vec()));
+
+		assert_err!(
+			Htlc::create_htlc(
+				Origin::signed(ALICE),
+				SYMBOL.to_vec(),
+				BOB,
+				amount,
+				secret_hash,
+				invalid_expiration
+			),
+			"invalid expiration"
+		);
+
+		assert_ok!(Htlc::create_htlc(
+			Origin::signed(ALICE),
+			SYMBOL.to_vec(),
+			BOB,
+			amount,
+			secret_hash,
+			expiration
+		));
+	});
+}
+
+#[test]
+fn htlc_cancel_should_work() {
+	let now = 1000;
+	let expiration = now + 1;
+	let amount = 1000;
+	let secret_hash = sha2_256(&[]);
+
+	new_test_ext().execute_with(|| {
+		Timestamp::set_timestamp(now);
+
+		assert_ok!(Htlc::create_token(Origin::signed(ALICE), SYMBOL.to_vec()));
+
+		assert_ok!(Htlc::create_htlc(
+			Origin::signed(ALICE),
+			SYMBOL.to_vec(),
+			BOB,
+			amount,
+			secret_hash,
+			expiration
+		));
+		Timestamp::set_timestamp(expiration);
+
+		assert_err!(
+			Htlc::cancel(Origin::signed(ALICE), secret_hash),
+			"htlc is not expired yet"
+		);
+
+		Timestamp::set_timestamp(expiration + 1);
+
+		assert_ok!(Htlc::cancel(Origin::signed(ALICE), secret_hash));
+	});
+}
+
+#[test]
+fn htlc_claim_should_work() {
+	let id = 0;
+	let amount = 1000;
+	let secret_hash = sha2_256(&[]);
+	let expiration = 1;
+
+	let mut ext = new_test_ext();
+	ext.execute_with(|| {
 		assert_ok!(Htlc::create_token(Origin::signed(ALICE), SYMBOL.to_vec()));
 
 		assert_ok!(Htlc::create_htlc(
@@ -60,28 +127,7 @@ fn htlc_claim_should_work() {
 		)
 	});
 
-	new_test_ext().execute_with(|| {
-		Timestamp::set_timestamp(1000);
-
-		let now = <Test as Trait>::Time::now();
-		assert_eq!(now, 1000);
-
-		assert_ok!(Htlc::create_token(Origin::signed(ALICE), SYMBOL.to_vec()));
-
-		let expiration = now + 1000;
-
-		assert_ok!(Htlc::create_htlc(
-			Origin::signed(ALICE),
-			SYMBOL.to_vec(),
-			BOB,
-			amount,
-			secret_hash,
-			expiration
-		));
-
-		let secret = vec![];
-		assert_ok!(Htlc::claim(Origin::signed(ALICE), secret));
-
+	ext.execute_with(|| {
 		assert_eq!(Htlc::get_balance_of(&id, &BOB), amount);
 		assert_eq!(Htlc::get_balance_of(&id, &CHARLIE), 0);
 

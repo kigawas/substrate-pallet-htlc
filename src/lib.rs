@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::type_complexity)]
 
 #[cfg(test)]
 mod mock;
@@ -29,8 +30,8 @@ pub trait Trait: system::Trait {
 }
 
 // trait alias
-type AccountIdOf<T> = <T as system::Trait>::AccountId;
-type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
+pub type AccountIdOf<T> = <T as system::Trait>::AccountId;
+pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 
 // type alias
 pub type SecretHash = [u8; 32]; // SHA-256 hash type
@@ -371,7 +372,7 @@ impl<T: Trait> Module<T> {
 	fn _claim(secret: Secret) -> Result {
 		let secret_hash = Self::hash_of(&secret);
 		if let Some(htlc) = <Htlc<T>>::get(&secret_hash) {
-			ensure!(T::Time::now() <= htlc.expiration_in_ms, "htlc expired!");
+			ensure!(T::Time::now() <= htlc.expiration_in_ms, "htlc expired");
 			ensure!(htlc.state == HtlcState::Created, "invalid htlc state");
 
 			Self::_mint(&htlc.asset_id, &htlc.buyer, htlc.amount)?;
@@ -401,7 +402,7 @@ impl<T: Trait> Module<T> {
 		if let Some(htlc) = <Htlc<T>>::get(&secret_hash) {
 			ensure!(
 				T::Time::now() > htlc.expiration_in_ms,
-				"htlc does not expire!"
+				"htlc is not expired yet"
 			);
 			ensure!(htlc.state == HtlcState::Created, "invalid htlc state");
 
