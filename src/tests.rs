@@ -9,7 +9,7 @@ const BOB: u64 = 2;
 const CHARLIE: u64 = 3;
 const DAVE: u64 = 4;
 
-const SYMBOL: [u8; 3] = [0x42, 0x54, 0x43];
+const SYMBOL: [u8; 3] = [0x42, 0x54, 0x43]; // "BTC"
 
 #[test]
 fn create_token_should_work() {

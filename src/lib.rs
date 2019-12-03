@@ -10,7 +10,7 @@ use codec::{Decode, Encode};
 
 use rstd::prelude::*;
 use runtime_io::hashing::sha2_256;
-use sr_primitives::{
+use sp_runtime::{
 	traits::{Member, One, SimpleArithmetic, StaticLookup, Zero},
 	RuntimeDebug,
 };
