@@ -1,4 +1,4 @@
-use runtime_io::hashing::sha2_256;
+use sp_io::hashing::sha2_256;
 use support::{assert_err, assert_ok};
 
 use crate::mock::{new_test_ext, Htlc, Origin, Test, Timestamp};

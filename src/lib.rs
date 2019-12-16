@@ -8,12 +8,12 @@ mod tests;
 
 use codec::{Decode, Encode};
 
-use rstd::prelude::*;
-use runtime_io::hashing::sha2_256;
+use sp_io::hashing::sha2_256;
 use sp_runtime::{
 	traits::{Member, One, SimpleArithmetic, StaticLookup, Zero},
 	RuntimeDebug,
 };
+use sp_std::prelude::*;
 use support::{
 	decl_event, decl_module, decl_storage, dispatch::Result, ensure, traits::Time, Parameter,
 };
